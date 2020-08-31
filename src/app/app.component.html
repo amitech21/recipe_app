@@ -1,12 +1,13 @@
-<app-header (featureSelected) = onNevigate($event)>...</app-header>
+<app-header></app-header>
 
 <div class="container">
   <div class="row">
-    <div class="col-md-12">
+    <!-- <div class="col-md-12">
       <app-recipes
       *ngIf="recipes"></app-recipes>
       <app-shopping-list
       *ngIf="shoppingList"></app-shopping-list>
-    </div>
+    </div> -->
+    <router-outlet></router-outlet> 
   </div>
 </div>
