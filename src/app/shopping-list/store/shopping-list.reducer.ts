@@ -37,25 +37,29 @@ export function shoppingListReducer(
             }; 
             
         case ShoppingListActions.UPDATE_INGREDIENT:
-            const ingredient = state.ingredients[action.payload.index]; // get ingredient in old state
+            const ingredient = state.ingredients[state.editedIngredientIndex]; // get ingredient in old state
             const updatedIngredient = {
                 ...ingredient,                  // this will first copy old state
-                ...action.payload.ingredient    // than update whole objects
+                ...action.payload    // than update whole objects
             };
             const updatedIngredients = [...state.ingredients]; // get ingredients array in old state
-            updatedIngredients[action.payload.index] = updatedIngredient; // override specific array
+            updatedIngredients[state.editedIngredientIndex] = updatedIngredient; // override specific array
 
             return {
                 ...state, // this will copy old state
-                ingredients: updatedIngredients
+                ingredients: updatedIngredients,
+                editedIngredientIndex: -1,
+                editedIngredient: null
             }; 
 
         case ShoppingListActions.DELETE_INGREDIENT:
             return {
                 ...state, // this will copy old state
                 ingredients: state.ingredients.filter((ig, igIndex) => {
-                    return igIndex !== action.payload;
-                })
+                    return igIndex !== state.editedIngredientIndex;
+                }),
+                editedIngredientIndex: -1,
+                editedIngredient: null
             };
 
         case ShoppingListActions.START_EDIT:
