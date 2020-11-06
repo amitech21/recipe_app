@@ -1,15 +1,27 @@
 import { Ingredient } from '../../shared/ingredient.model';
 import * as ShoppingListActions from './shopping-list.actions';
 
-const initialState = {
+export interface AppState {
+    shoppingList: State;
+}
+
+export interface State {
+    ingredients: Ingredient[],
+    editedIngredient: Ingredient,
+    editedIngredientIndex: number;
+}
+
+const initialState: State = {
     ingredients: [
         new Ingredient('Apples',5),
         new Ingredient('Tomatos',15),
-      ]
+      ],
+    editedIngredient: null,
+    editedIngredientIndex: -1
 };
 
 export function shoppingListReducer(
-    state = initialState, action: ShoppingListActions.ShoppingListActions) {
+    state: State = initialState, action: ShoppingListActions.ShoppingListActions) {
 
     switch(action.type) {
         case ShoppingListActions.ADD_INGREDIENT:
@@ -35,16 +47,32 @@ export function shoppingListReducer(
 
             return {
                 ...state, // this will copy old state
-                ingredients: [updatedIngredients]
+                ingredients: updatedIngredients
             }; 
 
         case ShoppingListActions.DELETE_INGREDIENT:
-             return {
+            return {
                 ...state, // this will copy old state
                 ingredients: state.ingredients.filter((ig, igIndex) => {
                     return igIndex !== action.payload;
                 })
             };
+
+        case ShoppingListActions.START_EDIT:
+            return {
+                ...state,
+                editedIngredientIndex: action.payload,
+                // this ... will copy and {} will create new object
+                editedIngredient: { ...state.ingredients[action.payload] } 
+            };
+
+        case ShoppingListActions.STOP_EDIT:
+            return {
+                ...state,
+                editedIngredientIndex: null,
+                editedIngredient: -1
+            };
+
         
         default: 
             return state;
