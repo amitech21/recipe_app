@@ -1,10 +1,11 @@
 import { Actions, ofType, Effect } from '@ngrx/effects';
 import * as AuthActions from './auth.actions';
-import { switchMap, catchError, map } from 'rxjs/operators';
+import { switchMap, catchError, map, tap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment'
 import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 
 export interface AuthResponseData {
     idToken: string;
@@ -25,7 +26,6 @@ export class AuthEffects {
         // filter use to fetch exact action , we want to proccess
         ofType(AuthActions.LOGIN_START),
         switchMap((authData: AuthActions.LoginStart) => {
-            console.log('in auth effect');
             return this.http.post<AuthResponseData>(
                 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.firebaseAPIKey,
                 {
@@ -37,23 +37,70 @@ export class AuthEffects {
                 map(resData => {
                     const expirationDate = new Date(new Date().getTime() + (+resData.expiresIn * 1000 ));
                     // of() to create new Observable
-                    return of(
-                        new AuthActions.Login({
+                    return new AuthActions.Login({
                             email: resData.email,
                             userId: resData.localId,
                             token: resData.idToken,
                             expirationDate: expirationDate
-                        })
-                    );
+                    })
+                    
                 }),
-                catchError(error => {
-                    // of() to create new Observable
-                    return of();
-                })
+            catchError(errorRes => {
+
+                let errorMessage = "Unknown error occured !!!!";
+                
+                if(!errorRes.error || !errorRes.error.error)
+                    return of(new AuthActions.LoginFail(errorMessage));
+                // return throwError(errorMessage);
+                console.log(errorRes.error.error.message);    
+                switch(errorRes.error.error.message) {
+                    case 'INVALID_EMAIL': {
+                        errorMessage = "Invalid email entered.";
+                        break;
+                    }
+
+                    case 'EMAIL_EXISTS': {
+                        errorMessage = "Email already exist.";
+                        break;
+                    }
+
+                    case 'EMAIL_NOT_FOUND': {
+                        errorMessage = "There is no user record corresponding to this identifier. The user may have been deleted.";
+                        break;
+                    }
+
+                    case 'INVALID_PASSWORD': {
+                        errorMessage = "The password is invalid or the user does not have a password.";
+                        break;
+                    }
+
+                    case 'USER_DISABLED': {
+                        errorMessage = "The user account has been disabled by an administrator.";
+                        break;
+                    }
+                        
+                }
+                // of() to create new Observable
+                return of(new AuthActions.LoginFail(errorMessage));
+                
+            })
                 
             );
-        }),
+        })
     );
 
-    constructor(private actions$: Actions, private http: HttpClient) {}
+    @Effect({ dispatch: false })
+    authSuccess = this.actions$
+        .pipe(
+            ofType(AuthActions.LOGIN),
+            tap(() => {
+                this.router.navigate(['/']);
+            })
+        )
+
+    constructor(
+        private actions$: Actions, 
+        private http: HttpClient,
+        private router: Router
+    ) {}
 }

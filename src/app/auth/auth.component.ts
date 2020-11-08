@@ -1,4 +1,4 @@
-import { Component, ComponentFactoryResolver, ViewChild, OnDestroy } from '@angular/core';
+import { Component, ComponentFactoryResolver, ViewChild, OnDestroy, OnInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
@@ -16,10 +16,10 @@ import * as AuthActions from './store/auth.actions'
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.css']
 })
-export class AuthComponent implements OnDestroy{
-  isLoginMode = true;
-  isLoading = false;
-  error: string = null;
+export class AuthComponent implements OnInit, OnDestroy{
+  isLoginMode = true;     // Only managed in this component, so not managed by NgRX
+  isLoading = false;      // Managed by NgRX
+  error: string = null;   // Managed by NgRX
 
   @ViewChild(PlaceholderDirective, { static: false }) alertHost: PlaceholderDirective;
 
@@ -31,6 +31,19 @@ export class AuthComponent implements OnDestroy{
     private componentFactoryResolver: ComponentFactoryResolver,
     private store: Store<fromApp.AppState>
   ) { }
+
+  ngOnInit(): void {
+    
+    this.store.select('auth').subscribe(authState => {
+      this.isLoading = authState.loading;
+      this.error = authState.authError;
+
+      if(this.error) {
+        this.showErrorAlert(this.error);
+      }
+    });
+
+  }
  
 
   onSwitchMode() {
@@ -58,19 +71,20 @@ export class AuthComponent implements OnDestroy{
       authObs = this.authService.signup(email,password);
     }
 
-    authObs.subscribe(
-      resData => {
-        console.log(resData);
-        this.isLoading = false;
-        this.router.navigate(['/recipes']);
-      },
-      errorMessage => {
-        console.log(errorMessage);
-        this.error = errorMessage;
-        this.showErrorAlert(errorMessage); // component programatically 
-        this.isLoading = false;
-      }
-    );
+
+    // authObs.subscribe(
+    //   resData => {
+    //     console.log(resData);
+    //     this.isLoading = false;
+    //     this.router.navigate(['/recipes']);
+    //   },
+    //   errorMessage => {
+    //     console.log(errorMessage);
+    //     this.error = errorMessage;
+    //     this.showErrorAlert(errorMessage); // component programatically 
+    //     this.isLoading = false;
+    //   }
+    // );
 
     form.reset();
   }
