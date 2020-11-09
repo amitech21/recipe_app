@@ -42,8 +42,11 @@
                 type="submit"
                 [disabled]="!authForm.valid">
                 {{ isLoginMode ? 'Login' : 'Sign Up' }}</button>
-                <button class="btn btn-primary" (click)="onSwitchMode()">Switch to {{ isLoginMode ? 'Sign Up' : 'Login' }}</button>
             </div>
         </form>
+        <div>
+        <br><br>
+            <button class="btn btn-primary" (click)="onSwitchMode()">Switch to {{ isLoginMode ? 'Sign Up' : 'Login' }}</button>
+        </div>
     </div>
 </div>

@@ -16,44 +16,28 @@ export interface AuthResponseData {
     registered?: boolean;
 }
 
-// to inject services in constructor
-@Injectable()
-export class AuthEffects {
-    
-    @Effect()
-    authLogin = this.actions$
-    .pipe(
-        // filter use to fetch exact action , we want to proccess
-        ofType(AuthActions.LOGIN_START),
-        // Switch to new Observable
-        switchMap((authData: AuthActions.LoginStart) => {
-            // return An Observable of the HTTPResponse for the request, 
-            // with a response body in the requested type.
-            return this.http.post<AuthResponseData>(
-                'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.firebaseAPIKey,
-                {
-                    email: authData.payload.email,
-                    password: authData.payload.password,
-                    returnSecureToken: true
-                }
-            ).pipe(
-                map(resData => {
-                    const expirationDate = new Date(new Date().getTime() + (+resData.expiresIn * 1000 ));
-                    // of() to create new Observable
-                    return new AuthActions.Login({
-                            email: resData.email,
-                            userId: resData.localId,
-                            token: resData.idToken,
-                            expirationDate: expirationDate
-                    })
-                    
-                }),
-                catchError(errorRes => {
+const handleAuthentication = (
+    expiresIn: number,
+    email: string,
+    userId: string,
+    token: string
+) => {
+        const expirationDate = new Date(new Date().getTime() + (expiresIn * 1000 ));
+        // of() to create new Observable
+        return new AuthActions.AuthenticateSuccess({
+        email: email,
+        userId: userId,
+        token: token,
+        expirationDate: expirationDate
+    });
+};
 
-                    let errorMessage = "Unknown error occured !!!!";
+const handleError = (errorRes: any) => {
+
+    let errorMessage = "Unknown error occured !!!!";
                     
                     if(!errorRes.error || !errorRes.error.error)
-                        return of(new AuthActions.LoginFail(errorMessage));
+                        return of(new AuthActions.AuthenticateFail(errorMessage));
                     // return throwError(errorMessage);
                     console.log(errorRes.error.error.message);    
                     switch(errorRes.error.error.message) {
@@ -83,7 +67,68 @@ export class AuthEffects {
                         }
                     }
                     // of() to create new Observable
-                    return of(new AuthActions.LoginFail(errorMessage));
+                    return of(new AuthActions.AuthenticateFail(errorMessage));
+};
+
+// to inject services in constructor
+@Injectable()
+export class AuthEffects {
+
+    @Effect()
+    authSignup = this.actions$
+    .pipe(
+        ofType(AuthActions.SIGNUP_START),
+        switchMap((signupAction: AuthActions.SignupStart) => {
+            return this.http.post<AuthResponseData>(
+                'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.firebaseAPIKey,
+                {
+                    email: signupAction.payload.email,
+                    password: signupAction.payload.password,
+                    returnSecureToken: true
+                }
+            ).pipe(
+                map(resData => {
+                    return handleAuthentication(
+                        +resData.expiresIn,
+                        resData.expiresIn,
+                        resData.localId,
+                        resData.idToken
+                    );                    
+                }),
+                catchError(errorRes => {
+                    return handleError(errorRes);
+                })
+            );
+        })
+    );
+    
+    @Effect()
+    authLogin = this.actions$
+    .pipe(
+        // filter use to fetch exact action , we want to proccess
+        ofType(AuthActions.LOGIN_START),
+        // Switch to new Observable
+        switchMap((authData: AuthActions.LoginStart) => {
+            // return An Observable of the HTTPResponse for the request, 
+            // with a response body in the requested type.
+            return this.http.post<AuthResponseData>(
+                'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.firebaseAPIKey,
+                {
+                    email: authData.payload.email,
+                    password: authData.payload.password,
+                    returnSecureToken: true
+                }
+            ).pipe(
+                map(resData => {
+                    return handleAuthentication(
+                        +resData.expiresIn,
+                        resData.expiresIn,
+                        resData.localId,
+                        resData.idToken
+                    );                    
+                }),
+                catchError(errorRes => {
+                    return handleError(errorRes);
                 })
                 
             );
@@ -93,7 +138,7 @@ export class AuthEffects {
     @Effect({ dispatch: false })
     authSuccess = this.actions$
         .pipe(
-            ofType(AuthActions.LOGIN),
+            ofType(AuthActions.AUTHENTICATE_SUCCESS),
             tap(() => {
                 this.router.navigate(['/recipes']);
             })
