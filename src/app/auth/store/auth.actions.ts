@@ -1,11 +1,12 @@
 import { Action } from '@ngrx/store';
+import { Actions } from '@ngrx/effects';
 
 export const LOGIN_START = '[Auth] Login Start';
 export const AUTHENTICATE_SUCCESS = '[Auth] Login';
 export const AUTHENTICATE_FAIL = '[Auth] Login Fail';
 
 export const SIGNUP_START = '[Auth] Signup Start';
-
+export const CLEAR_ERROR = '[Auth] Clear Error';
 export const LOGOUT = '[Auth] Logout';
 
 export class AuthenticateSuccess implements Action {
@@ -19,6 +20,10 @@ export class AuthenticateSuccess implements Action {
             expirationDate: Date; 
         }
     ) {}
+}
+
+export class ClearError implements Action{
+    readonly type = CLEAR_ERROR;
 }
 
 export class Logout implements Action {
@@ -45,4 +50,5 @@ export type AuthActions =
 | Logout
 | LoginStart
 | AuthenticateFail
-| SignupStart;
+| SignupStart
+| ClearError;
