@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { User } from '../user.model';
+import { AuthService } from '../auth.service';
 
 export interface AuthResponseData {
     idToken: string;
@@ -93,6 +94,9 @@ export class AuthEffects {
                     returnSecureToken: true
                 }
             ).pipe(
+                tap(resData => {
+                    this.authService.setLogoutTimer(+resData.expiresIn * 1000);
+                }),
                 map(resData => {
                     return handleAuthentication(
                         +resData.expiresIn,
@@ -125,6 +129,9 @@ export class AuthEffects {
                     returnSecureToken: true
                 }
             ).pipe(
+                tap(resData => {
+                    this.authService.setLogoutTimer(+resData.expiresIn * 1000);
+                }),
                 map(resData => {
                     return handleAuthentication(
                         +resData.expiresIn,
@@ -172,6 +179,9 @@ export class AuthEffects {
                  ); 
                  
                  if(loadedUser.token) {
+                    const expirationDuration = new Date(userData._tokenExpirationDate).getTime()
+                                                 - new Date().getTime();
+                    this.authService.setLogoutTimer(expirationDuration);
                     // this.user.next(loadedUser);
                     return new AuthActions.AuthenticateSuccess({
                             email: loadedUser.email,
@@ -195,6 +205,7 @@ export class AuthEffects {
         .pipe(
             ofType(AuthActions.LOGOUT),
             tap(() => {
+                this.authService.clearLogoutTimer();
                 this.router.navigate(['/']);
                 localStorage.removeItem('userData');
             })
@@ -203,6 +214,7 @@ export class AuthEffects {
     constructor(
         private actions$: Actions, 
         private http: HttpClient,
-        private router: Router
+        private router: Router,
+        private authService: AuthService // use authService in effects class
     ) {}
 }
