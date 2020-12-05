@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import {  ActivatedRoute, Params, Router } from '@angular/router';
 import { FormGroup, FormControl, FormArray, Validators } from '@angular/forms';
 import { RecipeService } from '../recipe.service';
+import * as fromApp from '../../store/app.reducer'
+import { Store } from '@ngrx/store';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-recipe-edit',
@@ -13,9 +16,12 @@ export class RecipeEditComponent implements OnInit {
   editMode: boolean = false;
   recipeForm: FormGroup;
 
-  constructor(private route:ActivatedRoute, 
-              private recipeService: RecipeService,
-              private router: Router) { }
+  constructor(
+    private route:ActivatedRoute, 
+    private recipeService: RecipeService,
+    private router: Router,
+    private store: Store<fromApp.AppState>
+    ) { }
 
   ngOnInit(): void {
     this.route.params
@@ -76,7 +82,18 @@ export class RecipeEditComponent implements OnInit {
     let recipeIngredients = new FormArray([]);
 
     if(this.editMode){
-      const recipe = this.recipeService.getRecipe(this.id);
+      //const recipe = this.recipeService.getRecipe(this.id);
+      const recipe: any = 
+      this.store.select('recipes')
+      .pipe(map(recipesState => {
+        return recipesState.recipes.find((recipe, index) => {
+          return index === this.id;
+        });
+      }))
+      .subscribe(recipe => {
+        return recipe;
+      });
+
       recipeName = recipe.name;
       recipeImagePath = recipe.imagePath;
       recipeDescription = recipe.description;
