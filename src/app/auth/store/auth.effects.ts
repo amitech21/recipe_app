@@ -136,7 +136,7 @@ export class AuthEffects {
                 map(resData => {
                     return handleAuthentication(
                         +resData.expiresIn,
-                        resData.expiresIn,
+                        resData.email,
                         resData.localId,
                         resData.idToken
                     );                    
