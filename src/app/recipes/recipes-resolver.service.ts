@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { Recipe } from './recipe.model';
-import { RecipeService } from './recipe.service';
 import * as fromApp from '../store/app.reducer'
 import { Store } from '@ngrx/store';
 import * as RecipeActions from '../recipes/store/recipe.actions'
@@ -15,7 +14,6 @@ export class RecipesResolverService implements Resolve<Recipe[]> {
     constructor(
         private store: Store<fromApp.AppState>,
         private actions$: Actions,
-        private recipeService: RecipeService 
     ) {}
     
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Recipe[] | import("rxjs").Observable<Recipe[]> | Promise<Recipe[]> {
